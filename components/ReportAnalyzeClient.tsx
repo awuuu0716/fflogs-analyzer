@@ -5,6 +5,7 @@ import { useState } from 'react';
 import type { AnalyzeReportResult } from '@/types/fflogs';
 import { ReportSummaryTable } from './ReportSummaryTable';
 import { RdpsCharts } from './RdpsCharts';
+import { saveStoredReport } from '@/lib/reportStorage';
 
 export function ReportAnalyzeClient() {
   const [reportCode, setReportCode] = useState('');
@@ -44,6 +45,7 @@ export function ReportAnalyzeClient() {
       }
 
       setResult(data);
+      saveStoredReport(data);
     } catch (error) {
       const message = error instanceof Error ? error.message : '分析失敗';
       setErrorMessage(message);
