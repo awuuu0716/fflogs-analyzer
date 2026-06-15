@@ -2,7 +2,7 @@
 
 import type { AnalyzeReportResult } from '@/types/fflogs';
 
-const STORAGE_KEY = 'fflogs-analyzer:reports';
+const STORAGE_KEY = 'fflogs-analyzer:reports:v2';
 
 export interface StoredAnalyzeReport {
   reportCode: string;
@@ -31,6 +31,25 @@ export function getStoredReports(): StoredAnalyzeReport[] {
   }
 }
 
+export function getStoredReport(
+  reportCode: string,
+  minFightDurationSeconds?: number,
+): StoredAnalyzeReport | null {
+  const normalizedReportCode = reportCode.trim().toLowerCase();
+
+  return (
+    getStoredReports().find((report) => {
+      const hasSameReportCode =
+        report.reportCode.trim().toLowerCase() === normalizedReportCode;
+      const hasSameDuration =
+        minFightDurationSeconds === undefined ||
+        report.data.minFightDurationSeconds === minFightDurationSeconds;
+
+      return hasSameReportCode && hasSameDuration;
+    }) ?? null
+  );
+}
+
 export function saveStoredReport(data: AnalyzeReportResult): StoredAnalyzeReport[] {
   const reports = getStoredReports();
 
@@ -43,7 +62,11 @@ export function saveStoredReport(data: AnalyzeReportResult): StoredAnalyzeReport
 
   const nextReports = [
     nextReport,
-    ...reports.filter((item) => item.reportCode !== data.reportCode),
+    ...reports.filter(
+      (item) =>
+        item.reportCode.trim().toLowerCase() !==
+        data.reportCode.trim().toLowerCase(),
+    ),
   ];
 
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextReports));

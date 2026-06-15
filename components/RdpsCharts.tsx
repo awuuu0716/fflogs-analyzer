@@ -18,14 +18,24 @@ export function RdpsCharts({ records, summary }: RdpsChartsProps) {
     return item.found && typeof item.rdps === 'number';
   });
 
-  const playerNames = [...new Set(chartRecords.map((item) => item.name))];
+  const players = [
+    ...new Map(
+      chartRecords.map((item) => [
+        getPlayerKey(item.name, item.job),
+        { name: item.name, job: item.job },
+      ]),
+    ).values(),
+  ];
 
-  const boxData: Data[] = playerNames.map((name) => {
-    const playerRecords = chartRecords.filter((item) => item.name === name);
+  const boxData: Data[] = players.map((player) => {
+    const playerKey = getPlayerKey(player.name, player.job);
+    const playerRecords = chartRecords.filter((item) => {
+      return getPlayerKey(item.name, item.job) === playerKey;
+    });
 
     return {
       type: 'box',
-      name,
+      name: getPlayerLabel(player.name, player.job),
       y: playerRecords.map((item) => item.rdps ?? 0),
       boxpoints: 'all',
       jitter: 0.35,
@@ -66,18 +76,21 @@ export function RdpsCharts({ records, summary }: RdpsChartsProps) {
     },
   };
 
-  const scatterData: Data[] = playerNames.map((name) => {
+  const scatterData: Data[] = players.map((player) => {
+    const playerKey = getPlayerKey(player.name, player.job);
     const playerRecords = chartRecords
-      .filter((item) => item.name === name)
+      .filter((item) => getPlayerKey(item.name, item.job) === playerKey)
       .sort((a, b) => a.fight - b.fight);
 
-    const playerSummary = summary.find((item) => item.name === name);
+    const playerSummary = summary.find((item) => {
+      return getPlayerKey(item.name, item.job) === playerKey;
+    });
     const avg = playerSummary?.averageRdps ?? null;
 
     return {
       type: 'scatter',
       mode: 'lines+markers',
-      name,
+      name: getPlayerLabel(player.name, player.job),
       x: playerRecords.map((item) => item.fight),
       y: playerRecords.map((item) => item.rdps ?? 0),
       text: playerRecords.map((item) => {
@@ -98,7 +111,12 @@ export function RdpsCharts({ records, summary }: RdpsChartsProps) {
   const averageLineData: Data[] = summary
     .map((item) => {
       const playerRecords = chartRecords
-        .filter((record) => record.name === item.name)
+        .filter((record) => {
+          return (
+            getPlayerKey(record.name, record.job) ===
+            getPlayerKey(item.name, item.job)
+          );
+        })
         .sort((a, b) => a.fight - b.fight);
 
       if (!playerRecords.length || item.averageRdps === null) {
@@ -168,4 +186,12 @@ export function RdpsCharts({ records, summary }: RdpsChartsProps) {
       </div>
     </section>
   );
+}
+
+function getPlayerKey(name: string, job: string | null): string {
+  return JSON.stringify([name, job]);
+}
+
+function getPlayerLabel(name: string, job: string | null): string {
+  return job ? `${name} (${job})` : name;
 }

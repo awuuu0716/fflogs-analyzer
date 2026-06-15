@@ -204,10 +204,11 @@ function calcPlayerSummary(records: PlayerFightRecord[]): PlayerSummary[] {
   for (const record of records) {
     if (typeof record.rdps !== 'number') continue;
 
-    const current = map.get(record.name);
+    const playerKey = getPlayerKey(record.name, record.job);
+    const current = map.get(playerKey);
 
     if (!current) {
-      map.set(record.name, {
+      map.set(playerKey, {
         name: record.name,
         job: record.job,
         rdpsList: [record.rdps],
@@ -236,6 +237,10 @@ function calcPlayerSummary(records: PlayerFightRecord[]): PlayerSummary[] {
     .sort((a, b) => {
       return (b.averageRdps ?? 0) - (a.averageRdps ?? 0);
     });
+}
+
+function getPlayerKey(name: string, job: string | null): string {
+  return JSON.stringify([name, job]);
 }
 
 function calcPerSecond(
